@@ -153,18 +153,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89ae74e55283de2498790e9f30306dba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  songBpm: 140
+  songBpm: 105
   secPerBeat: 0
   songPosition: 0
   songPositionInBeats: 0
-  startingSongPosition: 19
+  startingSongPosition: 0
+  firstBeatOffset: 0
   dspSongTime: 0
   audioSource: {fileID: 400083790}
   startingTime: 0
+  gameIsPaused: 0
   noteTrack: []
   fileLocation: rhythm.mid
   nextIndex: 0
-  futureIndex: 0
   NoteObjectRed: {fileID: 9142097595748254146, guid: 897730d38183f6441b13197ed760fa49, type: 3}
   NoteObjectBlue: {fileID: 9142097595748254146, guid: 36c0c00dda37e954587c4bbc1f588995, type: 3}
   isNoteRed: 1
@@ -193,7 +194,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: a23435121be079f41ac0c7f2661102af, type: 3}
+  m_audioClip: {fileID: 8300000, guid: a1841838037c5e645b0c84fb61fc4760, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1

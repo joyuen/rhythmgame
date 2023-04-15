@@ -10,7 +10,6 @@ using System.IO;
 
 public class Conductor : MonoBehaviour
 {
-
     //-------------------Music---------------------------------//
     //Song beats per minute
     //This is determined by the song you're trying to sync up to
@@ -19,26 +18,35 @@ public class Conductor : MonoBehaviour
     //The number of seconds for each song beat
     public float secPerBeat;
 
+    public float startingSongPosition;
+
+    //an AudioSource attached to this GameObject that will play the music.
+    public AudioSource audioSource;
+
+    //Starting time for music (can be used to play song from further point in time)
+    public float startingTime;
+
+    private float noteDelay;
+
+    //------------------- Dynamic Music Variables ---------------------------------//
+
     //Current song position, in seconds
     public float songPosition;
 
     //Current song position, in beats
     public float songPositionInBeats;
 
-    public float startingSongPosition;
-
     //How many seconds have passed since the song started
     public float dspSongTime;
 
-    //an AudioSource attached to this GameObject that will play the music.
-    public AudioSource audioSource;
-    public float startingTime;
+    //Has the song started
+    private bool songStarted = false;
 
-    public bool gameIsPaused = false;
+    //------------------- Pause Variables ---------------------------------//
 
-    private bool songStarted = false; 
+    public bool gameIsPaused = false;   
 
-    //-------------------Notes---------------------------------//
+    //------------------- Notes Variables ---------------------------------//
 
     //keep all the position-in-beats of notes in the song
     [System.Serializable]
@@ -62,12 +70,13 @@ public class Conductor : MonoBehaviour
     public string fileLocation;
     private List<double> timeStamps = new List<double>();
 
-    private string beatMapPath = "Assets/beatmap.csv";
+    private string beatMapPath = "Assets/The Sport Electro.csv";
     private string createPath = "Assets/temp.csv";
+
+    // private string songData = "Assets/The Sport Electro.txt";
 
     //the index of the next note to be spawned
     public int nextIndex = 0;
-    public int futureIndex = 0;
 
     private Vector3 position;
 
@@ -79,29 +88,33 @@ public class Conductor : MonoBehaviour
 
     //-------------------Functions---------------------------------//
 
-    // Start is called before the first frame update
-    void Start()
+    void GenerateBeatmap()
     {
-
         // dont want to use midi as final implementation
         // need to find a way to extract the noteTrack list to allow editing
         // midi can be used to create baseline beat map
 
-        // midiFile = MidiFile.Read(Application.streamingAssetsPath + "/" + fileLocation);
-        // var midiNotes = midiFile.GetNotes();
-        // var noteArray = new Melanchall.DryWetMidi.Interaction.Note[midiNotes.Count];
-        // midiNotes.CopyTo(noteArray, 0);
-        // foreach (var note in noteArray) {
-        //     var metricTimeSpan = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, midiFile.GetTempoMap());
-        //     timeStamps.Add((double)metricTimeSpan.Minutes * 60f + metricTimeSpan.Seconds + (double)metricTimeSpan.Milliseconds / 1000f);
-        // }
+        midiFile = MidiFile.Read(Application.streamingAssetsPath + "/" + fileLocation);
+        var midiNotes = midiFile.GetNotes();
+        var noteArray = new Melanchall.DryWetMidi.Interaction.Note[midiNotes.Count];
+        midiNotes.CopyTo(noteArray, 0);
+        foreach (var note in noteArray) {
+            var metricTimeSpan = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, midiFile.GetTempoMap());
+            timeStamps.Add((double)metricTimeSpan.Minutes * 60f + metricTimeSpan.Seconds + (double)metricTimeSpan.Milliseconds / 1000f);
+        }
 
-        // StringBuilder sb = new StringBuilder();
-        // foreach (var stamp in timeStamps) {
-        //     sb.AppendLine($"{stamp},0,0");
-        // }
-        // File.WriteAllText(createPath, sb.ToString());
-        
+        StringBuilder sb = new StringBuilder();
+        foreach (var stamp in timeStamps) {
+            sb.AppendLine($"{stamp},0,0");
+        }
+        File.WriteAllText(createPath, sb.ToString());
+    }
+
+    // Start is called before the first frame update
+    void Start()
+    {
+
+        // GenerateBeatmap()
 
         // Load beatmap from csv file
         var linesRead = File.ReadLines(beatMapPath);
@@ -117,15 +130,8 @@ public class Conductor : MonoBehaviour
         //Calculate the number of seconds in each beat
         secPerBeat = 60f / songBpm;
 
-        //Record the time when the music starts
-        dspSongTime = (float)AudioSettings.dspTime;
-
-        startingSongPosition = ((float)(AudioSettings.dspTime - dspSongTime) + startingTime);
-
         // //Start the music
         audioSource.time = startingTime; 
-        
-        // PlayScheduled 
     }
 
     void Init(GameObject NoteObjectRed, Vector3 positions, MusicNote noteToInit) {
@@ -165,6 +171,18 @@ public class Conductor : MonoBehaviour
         }
     }
 
+    void StartMusic()
+    {
+        //Record the time when the audio starts
+        dspSongTime = (float)AudioSettings.dspTime;
+
+        startingSongPosition = ((float)(AudioSettings.dspTime - dspSongTime) + startingTime);
+
+        //Start the song
+        audioSource.Play();
+        songStarted = true;
+    }
+
     void PauseGame ()
     {
         if(gameIsPaused)
@@ -182,9 +200,16 @@ public class Conductor : MonoBehaviour
     // // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && !songStarted)
+        if (!songStarted) 
         {
-            audioSource.Play();
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                StartMusic();
+            }
+            else
+            {
+                return;
+            }
         }
 
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -201,8 +226,10 @@ public class Conductor : MonoBehaviour
         //determine how many seconds since the song started
         songPosition = ((float)(AudioSettings.dspTime - dspSongTime) + startingTime);
 
-        double sourceTime = (double)audioSource.timeSamples / audioSource.clip.frequency;
-        if (nextIndex < noteTrack.Count && sourceTime >= noteTrack[nextIndex].timestamp - 1 && noteTrack[nextIndex].timestamp > startingSongPosition)
+        noteDelay = 0.80f; // dependent on difficulty (note speed and scale)
+
+        // noteTrack[nextIndex].timestamp > startingSongPosition - used for testing notes further into song
+        if (nextIndex < noteTrack.Count && songPosition >= noteTrack[nextIndex].timestamp - noteDelay && noteTrack[nextIndex].timestamp > startingSongPosition)
         {
             int notePosition = noteTrack[nextIndex].gridPosition;
 

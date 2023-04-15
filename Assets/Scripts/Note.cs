@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,11 +11,10 @@ public class Note : MonoBehaviour
 	public Conductor conductor;
     public float beat;
 
-    private float moveSpeed = 1.05f;
-    private float cardinalMoveSpeed = 0.75f;
+    private static double diagonalMoveSpeed;
+    private static double cardinalMoveSpeed;
 
-    private float scaleSpeed = 0.145f;
-    private float cardinalScaleSpeed = 0.15f;
+    private static double scaleSpeed;
     
     private Vector3 target;
     private Vector2 targetScale;
@@ -44,6 +44,11 @@ public class Note : MonoBehaviour
     }
 
     void Start() {
+        // use difficulty to determine numbers, change just cardinal movespeed. Easy = 0.8x, Hard = 1.25x
+        cardinalMoveSpeed = 1.00f;
+        diagonalMoveSpeed = Math.Sqrt(Math.Pow(cardinalMoveSpeed,2)*2);
+        scaleSpeed = cardinalMoveSpeed * 0.2f;
+
         spriteRenderer.color = new Color(1f, 1f, 1f, 0.35f);
 
         targetScale = new Vector2(0.14f, 0.14f);
@@ -107,19 +112,17 @@ public class Note : MonoBehaviour
 
     void Update() {
 
-        float moveStep = moveSpeed * Time.deltaTime;
-        float cardinalMoveStep = cardinalMoveSpeed * Time.deltaTime;
-        float scaleStep = scaleSpeed * Time.deltaTime;
-        float cardinalScaleStep = cardinalScaleSpeed * Time.deltaTime;
+        double diagonalMoveStep = diagonalMoveSpeed * Time.deltaTime;
+        double cardinalMoveStep = cardinalMoveSpeed * Time.deltaTime;
+        double scaleStep = scaleSpeed * Time.deltaTime;
         
         if (gridPosition == 1 || gridPosition == 3 || gridPosition == 5 || gridPosition == 7) {
-            transform.localScale = Vector2.MoveTowards (transform.localScale, targetScale, cardinalScaleStep);
-            transform.position = Vector3.MoveTowards(transform.position, target, cardinalMoveStep);
+            transform.position = Vector3.MoveTowards(transform.position, target, (float)cardinalMoveStep);
         }
         else {
-            transform.localScale = Vector2.MoveTowards (transform.localScale, targetScale, scaleStep);
-            transform.position = Vector3.MoveTowards(transform.position, target, moveStep);
+            transform.position = Vector3.MoveTowards(transform.position, target, (float)diagonalMoveStep);
         }
+        transform.localScale = Vector2.MoveTowards (transform.localScale, targetScale, (float)scaleStep);
 
         Color oldCol = spriteRenderer.color;
         spriteRenderer.color = new Color(oldCol.r, oldCol.g, oldCol.b, oldCol.a + conductor.secPerBeat * Time.deltaTime);
@@ -129,12 +132,21 @@ public class Note : MonoBehaviour
             // Destroy(gameObject);
         }
 
-        // Vector2 v2 = transform.position;
-        // if (v2 == target && flag == false) {
-        //     conductor.musicSource.Stop();
-        //     // Debug.Log(transform.localScale);
-        //     Debug.Log(conductor.songPositionInBeats);
+        Vector2 v2 = transform.localScale;
+        Vector3 v3 = transform.position;
+
+        // if (v2 == targetScale && flag == false) {
+        //     // conductor.musicSource.Stop();
+        //     Debug.Log(transform.localScale);
+        //     Debug.Log(conductor.songPosition);
         //     flag = true;
+        // }
+
+        // if (v3 == target && flag == false && v2 == targetScale) {
+        //     // Debug.Log(conductor.songPosition);
+        //     flag = true;
+        //     AudioSource.PlayClipAtPoint(hitNote, new Vector3(0, 0, 0), 0.5f);
+        //     // Destroy(gameObject);
         // }
     }
 }
