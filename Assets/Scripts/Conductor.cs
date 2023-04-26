@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Collections;
 using System.Text;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ public class Conductor : MonoBehaviour
     //The number of seconds for each song beat
     public float secPerBeat;
 
-    public float startingSongPosition;
+    public double startingSongPosition;
 
     //an AudioSource attached to this GameObject that will play the music.
     public AudioSource audioSource;
@@ -26,18 +27,18 @@ public class Conductor : MonoBehaviour
     //Starting time for music (can be used to play song from further point in time)
     public float startingTime;
 
-    private float noteDelay;
+    private double noteDelay;
 
     //------------------- Dynamic Music Variables ---------------------------------//
 
     //Current song position, in seconds
-    public float songPosition;
+    public double songPosition;
 
     //Current song position, in beats
     public float songPositionInBeats;
 
     //How many seconds have passed since the song started
-    public float dspSongTime;
+    public double dspSongTime;
 
     //Has the song started
     private bool songStarted = false;
@@ -63,6 +64,10 @@ public class Conductor : MonoBehaviour
         }
     }
     public List<MusicNote> noteTrack = new List<MusicNote>();
+    private double travelTime = 0.80057407142857142857142857142857;
+    public Stopwatch timer;
+    public TimeSpan timeElapsed { get; private set; }
+    public double elapsedTime;
 
 
     // Create noteTrack list using midi file
@@ -88,27 +93,27 @@ public class Conductor : MonoBehaviour
 
     //-------------------Functions---------------------------------//
 
-    void GenerateBeatmap()
-    {
-        // dont want to use midi as final implementation
-        // need to find a way to extract the noteTrack list to allow editing
-        // midi can be used to create baseline beat map
+    // void GenerateBeatmap()
+    // {
+    //     // dont want to use midi as final implementation
+    //     // need to find a way to extract the noteTrack list to allow editing
+    //     // midi can be used to create baseline beat map
 
-        midiFile = MidiFile.Read(Application.streamingAssetsPath + "/" + fileLocation);
-        var midiNotes = midiFile.GetNotes();
-        var noteArray = new Melanchall.DryWetMidi.Interaction.Note[midiNotes.Count];
-        midiNotes.CopyTo(noteArray, 0);
-        foreach (var note in noteArray) {
-            var metricTimeSpan = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, midiFile.GetTempoMap());
-            timeStamps.Add((double)metricTimeSpan.Minutes * 60f + metricTimeSpan.Seconds + (double)metricTimeSpan.Milliseconds / 1000f);
-        }
+    //     midiFile = MidiFile.Read(Application.streamingAssetsPath + "/" + fileLocation);
+    //     var midiNotes = midiFile.GetNotes();
+    //     var noteArray = new Melanchall.DryWetMidi.Interaction.Note[midiNotes.Count];
+    //     midiNotes.CopyTo(noteArray, 0);
+    //     foreach (var note in noteArray) {
+    //         var metricTimeSpan = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, midiFile.GetTempoMap());
+    //         timeStamps.Add((double)metricTimeSpan.Minutes * 60f + metricTimeSpan.Seconds + (double)metricTimeSpan.Milliseconds / 1000f);
+    //     }
 
-        StringBuilder sb = new StringBuilder();
-        foreach (var stamp in timeStamps) {
-            sb.AppendLine($"{stamp},0,0");
-        }
-        File.WriteAllText(createPath, sb.ToString());
-    }
+    //     StringBuilder sb = new StringBuilder();
+    //     foreach (var stamp in timeStamps) {
+    //         sb.AppendLine($"{stamp},0,0");
+    //     }
+    //     File.WriteAllText(createPath, sb.ToString());
+    // }
 
     // Start is called before the first frame update
     void Start()
@@ -120,7 +125,7 @@ public class Conductor : MonoBehaviour
         var linesRead = File.ReadLines(beatMapPath);
         foreach (var line in linesRead) {
             string[] temp = line.Split(',');
-            MusicNote newNote = new MusicNote((float)Convert.ToDouble(temp[0]), Convert.ToInt32(temp[1]), Convert.ToInt32(temp[2]));
+            MusicNote newNote = new MusicNote((float)Convert.ToDouble(temp[0]), Convert.ToInt32(temp[1]), 0);
             noteTrack.Add(newNote);
         }
 
@@ -129,9 +134,6 @@ public class Conductor : MonoBehaviour
 
         //Calculate the number of seconds in each beat
         secPerBeat = 60f / songBpm;
-
-        // //Start the music
-        audioSource.time = startingTime; 
     }
 
     void Init(GameObject NoteObjectRed, Vector3 positions, MusicNote noteToInit) {
@@ -140,46 +142,53 @@ public class Conductor : MonoBehaviour
         musicNote.Initialize(this, noteToInit.timestamp);
     }
 
-    void switchInit(int notePosition) 
+    void switchInit(int notePosition, int index) 
     {
         if (notePosition == 0) {
-            Init(NoteToUse, new Vector3 (0.3f, 0.7f, nextIndex), noteTrack[nextIndex]);
+            Init(NoteToUse, new Vector3 (0.3f, 0.7f, index), noteTrack[index]);
         }
         else if (notePosition == 1) {
-            Init(NoteToUse, new Vector3 (0.5f, 0.7f, nextIndex), noteTrack[nextIndex]);
+            Init(NoteToUse, new Vector3 (0.5f, 0.7f, index), noteTrack[index]);
         }
         else if (notePosition == 2) {
-            Init(NoteToUse, new Vector3 (0.7f, 0.7f, nextIndex), noteTrack[nextIndex]);
+            Init(NoteToUse, new Vector3 (0.7f, 0.7f, index), noteTrack[index]);
         }
         else if (notePosition == 3) {
-            Init(NoteToUse, new Vector3 (0.3f, 0.5f, nextIndex), noteTrack[nextIndex]);
+            Init(NoteToUse, new Vector3 (0.3f, 0.5f, index), noteTrack[index]);
         }
         else if (notePosition == 4) {
-            Init(NoteToUse, new Vector3 (0.5f, 0.5f, nextIndex), noteTrack[nextIndex]);
+            Init(NoteToUse, new Vector3 (0.5f, 0.5f, index), noteTrack[index]);
         }
         else if (notePosition == 5) {
-            Init(NoteToUse, new Vector3 (0.7f, 0.5f, nextIndex), noteTrack[nextIndex]);
+            Init(NoteToUse, new Vector3 (0.7f, 0.5f, index), noteTrack[index]);
         }
         else if (notePosition == 6) {
-            Init(NoteToUse, new Vector3 (0.3f, 0.3f, nextIndex), noteTrack[nextIndex]);
+            Init(NoteToUse, new Vector3 (0.3f, 0.3f, index), noteTrack[index]);
         }
         else if (notePosition == 7) {
-            Init(NoteToUse, new Vector3 (0.5f, 0.3f, nextIndex), noteTrack[nextIndex]);
+            Init(NoteToUse, new Vector3 (0.5f, 0.3f, index), noteTrack[index]);
         }
         else {
-            Init(NoteToUse, new Vector3 (0.7f, 0.3f, nextIndex), noteTrack[nextIndex]);
+            Init(NoteToUse, new Vector3 (0.7f, 0.3f, index), noteTrack[index]);
         }
     }
 
     void StartMusic()
     {
-        //Record the time when the audio starts
-        dspSongTime = (float)AudioSettings.dspTime;
+        audioSource.time = startingTime; 
 
-        startingSongPosition = ((float)(AudioSettings.dspTime - dspSongTime) + startingTime);
+        //Record the time when the audio starts
+        dspSongTime = AudioSettings.dspTime;
+
+        startingSongPosition = ((AudioSettings.dspTime - dspSongTime) + startingTime);
+        songPosition = startingSongPosition;
+
+        timer = new Stopwatch();
+        timer.Start();
 
         //Start the song
         audioSource.Play();
+        // audioSource.PlayScheduled(startingSongPosition + 5);
         songStarted = true;
     }
 
@@ -189,11 +198,13 @@ public class Conductor : MonoBehaviour
         {
             Time.timeScale = 0f;
             AudioListener.pause = true;
+            timer.Stop();
         }
         else 
         {
             Time.timeScale = 1;
             AudioListener.pause = false;
+            timer.Start();
         }
     }
 
@@ -221,15 +232,17 @@ public class Conductor : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R))
         {
             SceneManager.LoadScene(0);
+            elapsedTime = 0;
+            timer.Restart();
         }
 
         //determine how many seconds since the song started
-        songPosition = ((float)(AudioSettings.dspTime - dspSongTime) + startingTime);
+        // songPosition = (AudioSettings.dspTime - dspSongTime);  //what is this used for if I'm using a timer to dictate notes. Problem with syncing? or drift? lag? 
 
-        noteDelay = 0.80f; // dependent on difficulty (note speed and scale)
+        elapsedTime = timer.Elapsed.TotalSeconds;
 
         // noteTrack[nextIndex].timestamp > startingSongPosition - used for testing notes further into song
-        if (nextIndex < noteTrack.Count && songPosition >= noteTrack[nextIndex].timestamp - noteDelay && noteTrack[nextIndex].timestamp > startingSongPosition)
+        if (nextIndex < noteTrack.Count && elapsedTime >= noteTrack[nextIndex].timestamp - travelTime && noteTrack[nextIndex].timestamp > startingSongPosition)
         {
             int notePosition = noteTrack[nextIndex].gridPosition;
 
@@ -241,7 +254,12 @@ public class Conductor : MonoBehaviour
                 NoteToUse = NoteObjectBlue;
                 isNoteRed = true;
             }
-            switchInit(notePosition);
+
+            switchInit(notePosition, nextIndex);
+
+            // UnityEngine.Debug.Log("songPosition  " + songPosition + "; timeElapsed " + elapsedTime);
+            // UnityEngine.Debug.Log("init  " + noteTrack[nextIndex].timestamp); 
+
             nextIndex++;     
         }
         else if (nextIndex < noteTrack.Count && noteTrack[nextIndex].timestamp < startingSongPosition) {

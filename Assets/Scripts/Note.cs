@@ -6,6 +6,7 @@ using UnityEngine;
 public class Note : MonoBehaviour
 {
     private bool flag = false;
+    private bool flag2 = false;
 
     // Keep a reference of the conductor.
 	public Conductor conductor;
@@ -36,9 +37,13 @@ public class Note : MonoBehaviour
 	}
 
     void OnMouseOver() {      
-        if (Input.GetKeyDown(KeyCode.Z) || Input.GetKeyDown(KeyCode.X))
+        // if (Input.GetKeyDown(KeyCode.Z) || Input.GetKeyDown(KeyCode.X))
+        Vector2 v2 = transform.localScale;
+        Vector3 v3 = transform.position;
+
+        if (v3 == target && v2 == targetScale)
         {
-            AudioSource.PlayClipAtPoint(hitNote, new Vector3(0, 0, 0), 0.5f);
+            AudioSource.PlayClipAtPoint(hitNote, new Vector3(0, 0, 0), 0.75f);
             Destroy(gameObject);
         }
     }
@@ -47,7 +52,7 @@ public class Note : MonoBehaviour
         // use difficulty to determine numbers, change just cardinal movespeed. Easy = 0.8x, Hard = 1.25x
         cardinalMoveSpeed = 1.00f;
         diagonalMoveSpeed = Math.Sqrt(Math.Pow(cardinalMoveSpeed,2)*2);
-        scaleSpeed = cardinalMoveSpeed * 0.2f;
+        scaleSpeed = cardinalMoveSpeed * 0.205f;
 
         spriteRenderer.color = new Color(1f, 1f, 1f, 0.35f);
 
@@ -122,15 +127,20 @@ public class Note : MonoBehaviour
         else {
             transform.position = Vector3.MoveTowards(transform.position, target, (float)diagonalMoveStep);
         }
-        transform.localScale = Vector2.MoveTowards (transform.localScale, targetScale, (float)scaleStep);
+        if (gridPosition == 4){
+            transform.localScale = Vector2.MoveTowards (transform.localScale, targetScale, (float)scaleStep * (float)0.9915);
+        }
+        else {
+            transform.localScale = Vector2.MoveTowards (transform.localScale, targetScale, (float)scaleStep);
+        }
 
         Color oldCol = spriteRenderer.color;
         spriteRenderer.color = new Color(oldCol.r, oldCol.g, oldCol.b, oldCol.a + conductor.secPerBeat * Time.deltaTime);
 
         // cleanup missed notes
-        if (conductor.songPositionInBeats >= beat+1) {
-            // Destroy(gameObject);
-        }
+        // if (conductor.songPosition >= beat+0.5) {
+        //     Destroy(gameObject);
+        // }
 
         Vector2 v2 = transform.localScale;
         Vector3 v3 = transform.position;
@@ -142,11 +152,11 @@ public class Note : MonoBehaviour
         //     flag = true;
         // }
 
-        // if (v3 == target && flag == false && v2 == targetScale) {
-        //     // Debug.Log(conductor.songPosition);
-        //     flag = true;
-        //     AudioSource.PlayClipAtPoint(hitNote, new Vector3(0, 0, 0), 0.5f);
-        //     // Destroy(gameObject);
-        // }
+        if (v3 == target && flag == false && v2 == targetScale) {
+            // Debug.Log("songPosition  " + conductor.songPosition + "; timeElapsed " + conductor.elapsedTime);
+            AudioSource.PlayClipAtPoint(hitNote, new Vector3(0, 0, 0), 0.75f);
+            Debug.Log("timeElapsed " + conductor.elapsedTime);
+            Destroy(gameObject);
+        }
     }
 }

@@ -155,15 +155,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   songBpm: 105
   secPerBeat: 0
-  songPosition: 0
-  songPositionInBeats: 0
   startingSongPosition: 0
-  firstBeatOffset: 0
-  dspSongTime: 0
   audioSource: {fileID: 400083790}
   startingTime: 0
+  songPosition: 0
+  songPositionInBeats: 0
+  dspSongTime: 0
   gameIsPaused: 0
   noteTrack: []
+  elapsedTime: 0
   fileLocation: rhythm.mid
   nextIndex: 0
   NoteObjectRed: {fileID: 9142097595748254146, guid: 897730d38183f6441b13197ed760fa49, type: 3}
@@ -194,7 +194,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: a1841838037c5e645b0c84fb61fc4760, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 2f918e7975cd9a94da59917daa7a18a2, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
